@@ -106,6 +106,11 @@ class DiffusionAnalyzer(MSONable):
 
         nsteps x 1 array of the mean square displacement of specie.
 
+    .. attribute: msd_error
+
+       nsteps x 1 array of the standard deviation of the mean squared
+       displacement of specie.
+
     .. attribute: mscd
 
         nsteps x 1 array of the mean square charge displacement of specie.
@@ -118,6 +123,11 @@ class DiffusionAnalyzer(MSONable):
 
         The square displacement of all ion (both specie and other ions) as a
         nions x nsteps array.
+
+    .. attribute sq_disp_ions_error
+
+       The standard deviation of the square displacement for all ion 
+       (both specie and other ions) as a nions x nsteps array
 
     .. attribute: dt
 
@@ -240,6 +250,7 @@ class DiffusionAnalyzer(MSONable):
             # calculate the smoothed msd values
             msd = np.zeros_like(dt, dtype=np.double)
             sq_disp_ions = np.zeros((len(dc), len(dt)), dtype=np.double)
+            sq_disp_store = []
             msd_components = np.zeros(dt.shape + (3,))
 
             # calculate mean square charge displacement
@@ -256,11 +267,12 @@ class DiffusionAnalyzer(MSONable):
                     dx = dc[:, n:, :] - dc[:, :-n, :]
                     dcomponents = dc[:, n:, :] - dc[:, :-n, :]
 
+                import matplotlib.pyplot as plt
                 # Get msd
                 sq_disp = dx ** 2
+                sq_disp_store.append( np.sum(sq_disp, axis=2)[indices] )
                 sq_disp_ions[:, i] = np.average(np.sum(sq_disp, axis=2), axis=1)
                 msd[i] = np.average(sq_disp_ions[:, i][indices])
-
                 msd_components[i] = np.average(dcomponents[indices] ** 2,
                                                axis=(0, 1))
 
@@ -337,6 +349,7 @@ class DiffusionAnalyzer(MSONable):
             self.mscd = mscd
             self.haven_ratio = self.diffusivity / self.chg_diffusivity
             self.sq_disp_ions = sq_disp_ions
+            self.sq_disp_store = sq_disp_store
             self.msd_components = msd_components
             self.dt = dt
             self.indices = indices
